@@ -21,6 +21,32 @@ const SCENARIO_DATA = {
   outcomes: ["전환율 1.8% → 3.4%", "자사몰 매출 2배 상승", "CS 문의 20% 감소"],
 };
 
+type Candidate = {
+  id: number
+  name: string
+  position: string
+  bestPoint: string
+  action: string[]
+  minusFactor: {
+    problem: string
+    action: string
+  }
+}
+
+type User = {
+  nickname: string | null
+  hasVoted: boolean
+  votedFor: number | null
+}
+
+type Comment = {
+  id: string
+  nickname: string
+  content: string
+  createdAt: number
+  votedFor: number | null
+}
+
 const CANDIDATES = [
   {
     id: 1, name: "수아 프로", position: "MD",
@@ -55,19 +81,25 @@ const KEYS = {
   globalComments: "act_global_comments",
 };
 
-async function loadShared(key, fallback) {
+function loadShared<T>(key: string, fallback: T): T {
   try {
-    const r = await window.localStorage.get(key, true);
-    return JSON.parse(r.value);
-  } catch { return fallback; }
+    const r = localStorage.getItem(key);
+    if (!r) return fallback;
+    return JSON.parse(r);
+  } catch {
+    return fallback;
+  }
 }
 
-async function saveShared(key, value) {
-  try { await window.localStorage.set(key, JSON.stringify(value), true); } catch {}
+function saveShared(key: string, value: unknown) {
+  try { window.localStorage.setItem(key, JSON.stringify(value)); } catch {}
 }
 
 /* ── Nickname Modal ── */
-function NicknameModal({ onSubmit }) {
+type NicknameModalProps = {
+  onSubmit: (nickname: string) => void
+}
+function NicknameModal({ onSubmit }: NicknameModalProps) {
   const [nick, setNick] = useState("");
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{background:"rgba(0,0,0,0.5)",backdropFilter:"blur(8px)"}}>
@@ -188,7 +220,15 @@ function ScenarioSection() {
 }
 
 /* ── Candidate Card ── */
-function CandidateCard({ candidate, onVote, hasVoted, votedFor, allComments }) {
+type CandidateCardProps = {
+  candidate: Candidate
+  onVote: (id: number) => void
+  hasVoted: boolean
+  votedFor: number | null
+  allComments: Record<number, Comment[]>
+}
+
+function CandidateCard({ candidate, onVote, hasVoted, votedFor, allComments }: CandidateCardProps) {
   const isVotedFor = votedFor === candidate.id;
   const comments = allComments[candidate.id] || [];
   return (
@@ -236,7 +276,7 @@ function CandidateCard({ candidate, onVote, hasVoted, votedFor, allComments }) {
               <MessageCircle size={13} color="#9a9a9a" /><span style={{fontSize:12,fontWeight:700,color:"#6b6b6b"}}>소감 {comments.length}개</span>
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:8,maxHeight:160,overflowY:"auto"}}>
-              {comments.map(c=>(
+              {comments.map((c: Comment)=>(
                 <div key={c.id} style={{background:"#fff",borderRadius:10,padding:"10px 12px",border:"1px solid #ebebeb"}}>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
                     <div style={{width:22,height:22,background:"#1a1a1a",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -270,7 +310,13 @@ function CandidateCard({ candidate, onVote, hasVoted, votedFor, allComments }) {
 }
 
 /* ── Dashboard ── */
-function VotingDashboard({ votes, totalVotes, votedFor }) {
+type VotingDashboardProps = {
+  votes: Record<number, number>
+  totalVotes: number
+  votedFor: number | null
+}
+
+function VotingDashboard({ votes, totalVotes, votedFor }: VotingDashboardProps) {
   const sorted = [...CANDIDATES].sort((a,b)=>(votes[b.id]||0)-(votes[a.id]||0));
   const maxVotes = Math.max(...Object.values(votes), 1);
   return (
@@ -330,7 +376,12 @@ function VotingDashboard({ votes, totalVotes, votedFor }) {
 }
 
 /* ── 소감 ── */
-function CommentSection({ comments, onAdd, hasVoted }) {
+type CommentSectionProps = {
+  comments: Comment[]
+  onAdd: (txt: string) => void
+  hasVoted: boolean
+}
+function CommentSection({ comments, onAdd, hasVoted }: CommentSectionProps) {
   const [val, setVal] = useState("");
   const submit = () => { if(val.trim()){onAdd(val.trim());setVal("");} };
   return (
@@ -363,7 +414,7 @@ function CommentSection({ comments, onAdd, hasVoted }) {
         <div style={{display:"flex",flexDirection:"column",gap:10,maxHeight:280,overflowY:"auto"}}>
           {comments.length===0 ? (
             <p style={{textAlign:"center",color:"#bbb",fontSize:13.5,padding:"24px 0"}}>아직 소감이 없습니다. 첫 번째로 남겨보세요!</p>
-          ) : comments.map(c=>(
+          ) : comments.map((c: Comment)=>(
             <div key={c.id} style={{display:"flex",gap:12,padding:"14px 16px",background:"#fafafa",borderRadius:12}}>
               <div style={{width:36,height:36,background:"#1a1a1a",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                 <span style={{fontSize:13,fontWeight:700,color:"#fff"}}>{c.nickname[0]}</span>
@@ -383,23 +434,17 @@ function CommentSection({ comments, onAdd, hasVoted }) {
     </section>
   );
 }
-type Comment = {
-  id: string
-  nickname: string
-  content: string
-  createdAt: number
-  votedFor: number | null
-}
+
 /* ── Main App ── */
 export default function App() {
-  const [user, setUser] = useState({nickname:null,hasVoted:false,votedFor:null});
-  const [votes, setVotes] = useState({1:0,2:0,3:0,4:0});
-  const [candComments, setCandComments] = useState({1:[],2:[],3:[],4:[]});
+  const [user, setUser] = useState<User>({nickname: null,hasVoted: false,votedFor: null});
+  const [votes, setVotes] = useState<Record<number, number>>({1:0,2:0,3:0,4:0});
+  const [candComments, setCandComments] = useState<Record<number, Comment[]>>({1:[],2:[],3:[],4:[]});
   const [globalComments, setGlobalComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [confetti, setConfetti] = useState(false);
-  const [voteComment, setVoteComment] = useState("");
-  const [pending, setPending] = useState(null);
+  const [voteComment, setVoteComment] = useState<string>("");
+  const [pending, setPending] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
 
   // 초기 로드 — storage에서 데이터 불러오기
@@ -419,8 +464,8 @@ export default function App() {
 
   const totalVotes = Object.values(votes).reduce((s,v)=>s+v,0);
 
-  const handleNickname = useCallback(nick => setUser(p=>({...p,nickname:nick})), []);
-  const handleVoteClick = useCallback(id=>{setPending(id);setShowModal(true);}, []);
+  const handleNickname = useCallback((nick: string) => setUser(p=>({...p,nickname:nick})), []);
+  const handleVoteClick = useCallback((id: number)=>{setPending(id);setShowModal(true);}, []);
 
   const handleConfirm = useCallback(async () => {
     if(!pending) return;
@@ -444,7 +489,7 @@ export default function App() {
     setShowModal(false); setVoteComment(""); setPending(null);
   }, [pending, voteComment, votes, candComments, user]);
 
-  const handleGlobalComment = useCallback(async (txt) => {
+  const handleGlobalComment = useCallback(async (txt: string) => {
     const nc = {id:crypto.randomUUID(),nickname:user.nickname||"",content:txt,createdAt:Date.now(),votedFor:user.votedFor};
     const updated = [nc, ...globalComments];
     setGlobalComments(updated);
