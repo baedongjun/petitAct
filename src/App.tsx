@@ -383,13 +383,19 @@ function CommentSection({ comments, onAdd, hasVoted }) {
     </section>
   );
 }
-
+type Comment = {
+  id: string
+  nickname: string
+  content: string
+  createdAt: number
+  votedFor: number | null
+}
 /* ── Main App ── */
 export default function App() {
   const [user, setUser] = useState({nickname:null,hasVoted:false,votedFor:null});
   const [votes, setVotes] = useState({1:0,2:0,3:0,4:0});
   const [candComments, setCandComments] = useState({1:[],2:[],3:[],4:[]});
-  const [globalComments, setGlobalComments] = useState([]);
+  const [globalComments, setGlobalComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [confetti, setConfetti] = useState(false);
   const [voteComment, setVoteComment] = useState("");
