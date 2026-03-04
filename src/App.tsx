@@ -57,13 +57,13 @@ const KEYS = {
 
 async function loadShared(key, fallback) {
   try {
-    const r = await window.storage.get(key, true);
+    const r = await window.localStorage.get(key, true);
     return JSON.parse(r.value);
   } catch { return fallback; }
 }
 
 async function saveShared(key, value) {
-  try { await window.storage.set(key, JSON.stringify(value), true); } catch {}
+  try { await window.localStorage.set(key, JSON.stringify(value), true); } catch {}
 }
 
 /* ── Nickname Modal ── */
