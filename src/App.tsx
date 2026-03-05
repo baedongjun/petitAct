@@ -478,8 +478,8 @@ export default function App() {
     await saveShared(KEYS.votes, newVotes);
 
     if(txt) {
-      const nc = {id:crypto.randomUUID(),nickname:user.nickname||"",content:txt,createdAt:Date.now()};
-      const newCC = {...candComments, [pending]:[nc,...(candComments[pending]||[])]};
+      const nc: Comment = {id:crypto.randomUUID(),nickname:user.nickname||"",content:txt,createdAt:Date.now(),votedFor: pending};
+      const newCC: Record<number, Comment[]> = {...candComments, [pending]:[nc,...(candComments[pending]||[])]};
       setCandComments(newCC);
       await saveShared(KEYS.candComments, newCC);
     }
