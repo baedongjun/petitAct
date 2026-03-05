@@ -85,7 +85,7 @@ const KEYS = {
 
 async function loadShared<T>(key: string, fallback: T): Promise<T> {
   try {
-    const snap = await getDoc(doc(db, "petit-Act", key));
+    const snap = await getDoc(doc(db, "petit-act", key));
     return snap.exists() ? (snap.data().value as T) : fallback;
   } catch {
     return fallback;
@@ -94,7 +94,7 @@ async function loadShared<T>(key: string, fallback: T): Promise<T> {
 
 async function saveShared(key: string, value: unknown): Promise<void> {
   try {
-    await setDoc(doc(db, "petit-Act", key), { value });
+    await setDoc(doc(db, "petit-act", key), { value });
   } catch {}
 }
 
