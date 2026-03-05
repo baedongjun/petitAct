@@ -358,7 +358,7 @@ function VotingDashboard({ votes, totalVotes, votedFor }: VotingDashboardProps) 
                       <div style={{display:"flex",alignItems:"baseline",gap:2}}>
                         <span style={{fontSize:20,fontWeight:800,color:"#1a1a1a"}}>{pct}</span>
                         <span style={{fontSize:12,color:"#bbb"}}>%</span>
-                        <span style={{fontSize:12,color:"#ccc",marginLeft:4}}>{`({count}표)`}</span>
+                        <span style={{fontSize:12,color:"#ccc",marginLeft:4}}>({count}표)</span>
                       </div>
                     </div>
                     <div style={{width:"100%",background:"#ebebeb",borderRadius:100,height:6}}>
