@@ -440,7 +440,10 @@ function CommentSection({ comments, onAdd, hasVoted }: CommentSectionProps) {
 
 /* ── Main App ── */
 export default function App() {
-  const [user, setUser] = useState<User>({nickname: null,hasVoted: false,votedFor: null});
+  const [user, setUser] = useState<User>(() => {
+    const saved = localStorage.getItem("act_user");
+    return saved ? JSON.parse(saved) : {nickname: null, hasVoted: false, votedFor: null};
+  });
   const [votes, setVotes] = useState<Record<number, number>>({1:0,2:0,3:0,4:0});
   const [candComments, setCandComments] = useState<Record<number, Comment[]>>({1:[],2:[],3:[],4:[]});
   const [globalComments, setGlobalComments] = useState<Comment[]>([]);
@@ -467,7 +470,13 @@ export default function App() {
 
   const totalVotes = Object.values(votes).reduce((s,v)=>s+v,0);
 
-  const handleNickname = useCallback((nick: string) => setUser(p=>({...p,nickname:nick})), []);
+  const handleNickname = useCallback((nick: string) => {
+    setUser(p => {
+      const updated = {...p, nickname: nick};
+      localStorage.setItem("act_user", JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
   const handleVoteClick = useCallback((id: number)=>{setPending(id);setShowModal(true);}, []);
 
   const handleConfirm = useCallback(async () => {
@@ -478,6 +487,7 @@ export default function App() {
 
     setVotes(newVotes);
     setUser(newUser);
+    localStorage.setItem("act_user", JSON.stringify(newUser));
     await saveShared(KEYS.votes, newVotes);
 
     if(txt) {
