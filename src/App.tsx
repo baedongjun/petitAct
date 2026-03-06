@@ -485,25 +485,29 @@ export default function App() {
     const newUser = { ...user, hasVoted: true, votedFor: pending };
   
     await runTransaction(db, async (transaction) => {
-      // 1. 최신 votes를 트랜잭션 안에서 읽기
       const votesRef = doc(db, "petit-act", KEYS.votes);
+      const ccRef = doc(db, "petit-act", KEYS.candComments);
+
+      // ✅ 먼저 모든 read
       const votesSnap = await transaction.get(votesRef);
+      const ccSnap = await transaction.get(ccRef);
+
       const latestVotes = votesSnap.exists()
         ? (votesSnap.data().value as Record<number, number>)
         : { 1: 0, 2: 0, 3: 0, 4: 0 };
-  
+
+      const latestCC = ccSnap.exists()
+        ? (ccSnap.data().value as Record<number, Comment[]>)
+        : { 1: [], 2: [], 3: [], 4: [] };
+
+      // 계산
       const newVotes = { ...latestVotes, [pending]: (latestVotes[pending] || 0) + 1 };
+
+      // ✅ write는 나중
       transaction.set(votesRef, { value: newVotes });
       setVotes(newVotes);
-  
-      // 2. candComments도 동일하게
+
       if (txt) {
-        const ccRef = doc(db, "petit-act", KEYS.candComments);
-        const ccSnap = await transaction.get(ccRef);
-        const latestCC = ccSnap.exists()
-          ? (ccSnap.data().value as Record<number, Comment[]>)
-          : { 1: [], 2: [], 3: [], 4: [] };
-  
         const nc: Comment = {
           id: crypto.randomUUID(),
           nickname: user.nickname || "",
@@ -511,7 +515,9 @@ export default function App() {
           createdAt: Date.now(),
           votedFor: pending,
         };
+
         const newCC = { ...latestCC, [pending]: [nc, ...(latestCC[pending] || [])] };
+
         transaction.set(ccRef, { value: newCC });
         setCandComments(newCC);
       }
